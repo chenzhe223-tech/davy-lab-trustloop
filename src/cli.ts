@@ -57,7 +57,7 @@ if (args.compare) {
     if (baseline?.schemaVersion !== "1.0.0" || !Array.isArray(baseline?.checks) || typeof baseline?.runId !== "string") throw new Error("Baseline is not a TrustLoop report schema 1.0.0.");
     const comparison = compareReports(report, baseline);
     if (!comparison.targetMatches) { console.error("Comparison warning: target URL differs from baseline; this is not an apples-to-apples comparison."); process.exitCode = Math.max(process.exitCode || 0, 2); }
-    if (comparison.summary.regressed > 0) process.exitCode = Math.max(process.exitCode || 0, 1);
+    if (comparison.summary.regressed > 0 || comparison.summary.removed > 0) process.exitCode = Math.max(process.exitCode || 0, 1);
     await fs.writeFile(path.join(out, "comparison.json"), JSON.stringify(comparison, null, 2) + "\n");
     await fs.writeFile(path.join(out, "comparison.md"), renderComparisonMarkdown(comparison));
     console.log("Comparison: improved=" + comparison.summary.improved + ", regressed=" + comparison.summary.regressed + ", targetMatches=" + comparison.targetMatches);
