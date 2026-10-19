@@ -9,7 +9,7 @@ export function makeReport(url: string, checks: CheckResult[], startedAt: string
   const skipped=checks.filter(c=>c.status==="SKIP").length;
   const critical=checks.some(c=>c.critical&&c.status!=="PASS");
   const status: ReportStatus=critical?"BLOCKED":failed?"FAIL":"PASS";
-  const environment: TrustLoopReport["target"]["environment"]=/localhost|127\.0\.0\.1/.test(url)?"local":/staging|preview|test/i.test(url)?"staging":"unknown";
+  const environment: TrustLoopReport["target"]["environment"] = declaredEnvironment || (/localhost|127\\.0\\.0\\.1|\\[::1\\]/i.test(url) ? "local" : "unknown");
   return {schemaVersion:"1.0.0",runId:randomUUID(),target:{url,environment},startedAt,finishedAt:new Date().toISOString(),status,
     summary:{total:checks.length,passed,failed,blocked,skipped},checks,evidencePolicy:{redacted:true,productionWritesBlocked:true}};
 }
