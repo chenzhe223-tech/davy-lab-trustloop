@@ -23,7 +23,7 @@ if (adapter === "niantou-box") {
 }
 const started=new Date().toISOString();const checks:CheckResult[]=[];const add=(c:CheckResult)=>checks.push(c);
 const browser=await chromium.launch({headless:true});const page=await browser.newPage();const errors:string[]=[];
-page.on("console",m=>{if(m.type()==="error")errors.push(redactDiagnostic(m.text()));});page.on("pageerror",e=>errors.push(redactDiagnostic(e.message)));
+page.on("console",m=>{if(m.type()==="error"){const message=m.text();if(/ERR_BLOCKED_BY_CLIENT|blocked by client/i.test(message))return;errors.push(redactDiagnostic(message));}});page.on("pageerror",e=>errors.push(redactDiagnostic(e.message)));
 await page.route("**/*",async route=>{
  const requestUrl=route.request().url();
  if(!isAllowedRequestUrl(requestUrl,allow)||shouldBlockRequest(route.request().method())){await route.abort("blockedbyclient");return;}
