@@ -31,7 +31,7 @@ export function loadNianBoxAdapterConfig(env: NodeJS.ProcessEnv): NianBoxAdapter
   }
   const allowedHosts = (env.TRUSTLOOP_ALLOWED_HOSTS || "").split(",").map(v => v.trim().toLowerCase()).filter(Boolean);
   const parsed = validateTarget(env.TARGET_URL || "", allowedHosts);
-  if (environment === "local" && !["localhost","127.0.0.1","::1"].includes(parsed.hostname)) throw new Error("Local mode requires a loopback host.");
+  if (environment === "local" && !["localhost","127.0.0.1","::1","[::1]"].includes(parsed.hostname)) throw new Error("Local mode requires a loopback host.");
   if (environment !== "local" && /(^|[-.])(prod|production)([-.]|$)/i.test(parsed.hostname)) throw new Error("Production-looking hostnames are not permitted in NianBox test mode.");
   const testAccountLabel = (env.TRUSTLOOP_TEST_ACCOUNT_LABEL || "").trim();
   if (!testAccountLabel) throw new Error("Set TRUSTLOOP_TEST_ACCOUNT_LABEL to a non-sensitive label for the disposable test account.");
