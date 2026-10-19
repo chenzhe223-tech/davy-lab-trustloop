@@ -52,10 +52,12 @@ if (args.compare) {
     const baseline = JSON.parse(await fs.readFile(args.compare, "utf8"));
     if (baseline?.schemaVersion !== "1.0.0" || !Array.isArray(baseline?.checks) || typeof baseline?.runId !== "string") throw new Error("Baseline is not a TrustLoop report schema 1.0.0.");
     const comparison = compareReports(report, baseline);
+    if (!comparison.targetMatches) { console.error("Comparison warning: target URL differs from baseline; this is not an apples-to-apples comparison."); process.exitCode = Math.max(process.exitCode || 0, 2); }
+    if (comparison.summary.regressed > 0) process.exitCode = Math.max(process.exitCode || 0, 1);
     await fs.writeFile(path.join(out, "comparison.json"), JSON.stringify(comparison, null, 2) + "\n");
     await fs.writeFile(path.join(out, "comparison.md"), renderComparisonMarkdown(comparison));
     console.log("Comparison: improved=" + comparison.summary.improved + ", regressed=" + comparison.summary.regressed + ", targetMatches=" + comparison.targetMatches);
-  } catch (e) { console.error("Comparison failed: " + redactDiagnostic((e as Error).message)); process.exitCode = 2; }
+  } catch (e) { console.error("Comparison failed: " + redactDiagnostic((e as Error).message)); process.exitCode = Math.max(process.exitCode || 0, 2); }
 }
 console.log(`TrustLoop: ${report.status}\nReports: ${path.resolve(out)}`);
-if(report.status==="BLOCKED")process.exit(3);if(report.status==="FAIL")process.exit(1);
+if(report.status==="BLOCKED")process.exitCode = Math.max(process.exitCode || 0, 3); else if(report.status==="FAIL")process.exitCode = Math.max(process.exitCode || 0, 1);
