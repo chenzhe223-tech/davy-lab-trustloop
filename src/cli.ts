@@ -5,6 +5,7 @@ import { validateTarget, shouldBlockRequest, isAllowedRequestUrl, safeUrl, redac
 import { makeReport, writeReports } from "./report.js";
 import type { CheckResult } from "./types.js";
 import { loadNianBoxAdapterConfig, pendingNianBoxChecks } from "./adapters/niantou-box.js";
+import { compareReports, renderComparisonMarkdown } from "./compare.js";
 function parseArgs(a:string[]){const o:Record<string,string>={};for(let i=0;i<a.length;i++)if(a[i]?.startsWith("--")){const k=a[i]!.slice(2);o[k]=a[i+1]&&!a[i+1]!.startsWith("--")?a[++i]!:"true";}return o;}
 const args=parseArgs(process.argv.slice(2));
 const target=args.url||process.env.TARGET_URL||"";
@@ -46,5 +47,15 @@ for(const [id,title,details] of [
 ] as const)add({id,category:"security",severity:"critical",status:"BLOCKED",title,details,critical:true,repairHint:"Implement an isolated test with controlled test accounts and verifiable evidence before marking PASS."});
 }
 const report=makeReport(safeUrl(url.toString()),checks,started);await writeReports(report,out);
+if (args.compare) {
+  try {
+    const baseline = JSON.parse(await fs.readFile(args.compare, "utf8"));
+    if (baseline?.schemaVersion !== "1.0.0" || !Array.isArray(baseline?.checks) || typeof baseline?.runId !== "string") throw new Error("Baseline is not a TrustLoop report schema 1.0.0.");
+    const comparison = compareReports(report, baseline);
+    await fs.writeFile(path.join(out, "comparison.json"), JSON.stringify(comparison, null, 2) + "\n");
+    await fs.writeFile(path.join(out, "comparison.md"), renderComparisonMarkdown(comparison));
+    console.log("Comparison: improved=" + comparison.summary.improved + ", regressed=" + comparison.summary.regressed + ", targetMatches=" + comparison.targetMatches);
+  } catch (e) { console.error("Comparison failed: " + redactDiagnostic((e as Error).message)); process.exitCode = 2; }
+}
 console.log(`TrustLoop: ${report.status}\nReports: ${path.resolve(out)}`);
 if(report.status==="BLOCKED")process.exit(3);if(report.status==="FAIL")process.exit(1);
