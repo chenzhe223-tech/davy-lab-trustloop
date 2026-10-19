@@ -27,3 +27,17 @@ export function safeUrl(raw: string): string {
 export function redactDiagnostic(text: string): string {
   return text.replace(/https?:\/\/[^\s"'<>]+/gi, (raw) => safeUrl(raw)).slice(0, 2000);
 }
+
+export type SafeEnvironment = "local" | "test" | "staging";
+export function validateSafeEnvironment(raw: string | undefined, target: URL): SafeEnvironment {
+  if (raw !== "local" && raw !== "test" && raw !== "staging") {
+    throw new Error("TRUSTLOOP_ENVIRONMENT must be explicitly set to local, test, or staging; production is not supported.");
+  }
+  if (raw === "local" && !["localhost", "127.0.0.1", "::1"].includes(target.hostname)) {
+    throw new Error("Local mode requires a loopback host.");
+  }
+  if (raw !== "local" && /(^|[-.])(prod|production)([-.]|$)/i.test(target.hostname)) {
+    throw new Error("Production-looking hostnames are not permitted in test/staging mode.");
+  }
+  return raw;
+}
