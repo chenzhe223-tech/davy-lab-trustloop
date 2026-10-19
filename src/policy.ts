@@ -33,7 +33,7 @@ export function validateSafeEnvironment(raw: string | undefined, target: URL): S
   if (raw !== "local" && raw !== "test" && raw !== "staging") {
     throw new Error("TRUSTLOOP_ENVIRONMENT must be explicitly set to local, test, or staging; production is not supported.");
   }
-  if (raw === "local" && !["localhost", "127.0.0.1", "::1"].includes(target.hostname)) {
+  if (raw === "local" && !["localhost", "127.0.0.1", "::1", "[::1]"].includes(target.hostname)) {
     throw new Error("Local mode requires a loopback host.");
   }
   if (raw !== "local" && /(^|[-.])(prod|production)([-.]|$)/i.test(target.hostname)) {
