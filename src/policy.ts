@@ -21,7 +21,7 @@ export function safeUrl(raw: string): string {
   try {
     const u = new URL(raw);
     for (const k of [...u.searchParams.keys()]) if (/(token|key|secret|password|auth|session|code)/i.test(k)) u.searchParams.set(k,"[REDACTED]");
-    u.username = ""; u.password = ""; return u.toString();
+    u.username = ""; u.password = ""; u.hash = ""; return u.toString();
   } catch { return "[INVALID_URL]"; }
 }
 export function redactDiagnostic(text: string): string {
