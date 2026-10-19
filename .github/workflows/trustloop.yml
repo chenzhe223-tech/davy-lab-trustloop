@@ -19,6 +19,9 @@ jobs:
     env:
       TARGET_URL: ${{ inputs.target_url || vars.TRUSTLOOP_TARGET_URL }}
       TRUSTLOOP_ALLOWED_HOSTS: ${{ vars.TRUSTLOOP_ALLOWED_HOSTS }}
+      TRUSTLOOP_ADAPTER: ${{ vars.TRUSTLOOP_ADAPTER || 'generic' }}
+      TRUSTLOOP_ENVIRONMENT: ${{ vars.TRUSTLOOP_ENVIRONMENT }}
+      TRUSTLOOP_TEST_ACCOUNT_LABEL: ${{ vars.TRUSTLOOP_TEST_ACCOUNT_LABEL }}
       TRUSTLOOP_OUT: reports/latest
     steps:
       - uses: actions/checkout@v4
