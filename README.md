@@ -36,3 +36,14 @@ For a test/staging deployment only, set:
 - `TARGET_URL` and `TRUSTLOOP_ALLOWED_HOSTS` to the exact test host
 
 Then run `pnpm test:site`. The report includes NianBox-specific check IDs and keeps unimplemented checks BLOCKED. Do not set the adapter to production or use production data.
+
+
+## Compare before/after runs
+
+After a previous run, keep its `report.json` as the baseline. Pass that file to the next run:
+
+```bash
+pnpm test:site -- --url "$TARGET_URL" --out reports/current --compare reports/baseline/report.json
+```
+
+The runner writes `comparison.json` and `comparison.md` alongside the current report. Comparisons use stable check IDs and explicitly flag when the target URL differs. A changed status is not automatically proof that a security issue is fixed; inspect the underlying evidence.
