@@ -7,6 +7,7 @@ Evidence-based QA gate for AI-built web applications. Phase 1 provides a local C
 - Requests to hosts outside the allowlist and POST, PUT, PATCH, DELETE requests are blocked by default.
 - URL query parameters that look like credentials are redacted in reports and diagnostics.
 - Critical security checks without reproducible evidence remain BLOCKED; page availability is not security evidence.
+- Screenshots are disabled by default because page captures may contain sensitive content; enable only with synthetic test data using `TRUSTLOOP_CAPTURE_SCREENSHOTS=true`.
 - No application database is required; reports are file-based.
 
 ## Setup
