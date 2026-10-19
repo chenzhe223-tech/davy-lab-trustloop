@@ -46,7 +46,7 @@ for(const [id,title,details] of [
  ["security.cloud-plaintext-readability","Cloud plaintext readability","No isolated backend/database inspection adapter configured; unverified."]
 ] as const)add({id,category:"security",severity:"critical",status:"BLOCKED",title,details,critical:true,repairHint:"Implement an isolated test with controlled test accounts and verifiable evidence before marking PASS."});
 }
-const report=makeReport(safeUrl(url.toString()),checks,started);await writeReports(report,out);
+const report=makeReport(safeUrl(url.toString()),checks,started,process.env.TRUSTLOOP_ENVIRONMENT as "local" | "test" | "staging");await writeReports(report,out);
 if (args.compare) {
   try {
     const baseline = JSON.parse(await fs.readFile(args.compare, "utf8"));
