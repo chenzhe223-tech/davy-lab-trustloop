@@ -47,3 +47,13 @@ pnpm test:site -- --url "$TARGET_URL" --out reports/current --compare reports/ba
 ```
 
 The runner writes `comparison.json` and `comparison.md` alongside the current report. Comparisons use stable check IDs and explicitly flag when the target URL differs. A changed status is not automatically proof that a security issue is fixed; inspect the underlying evidence.
+
+
+## CI exit behavior
+
+- Exit code `0`: no observed quality failure and no critical gate failure.
+- Exit code `1`: observed quality failure or a report regression.
+- Exit code `2`: invalid configuration, comparison failure, or a comparison against a different target URL.
+- Exit code `3`: at least one critical security control is not PASS.
+
+A different target URL is explicitly flagged in the comparison and is not treated as an apples-to-apples comparison. The declared environment is written into report metadata; it is not guessed from words in a hostname.
