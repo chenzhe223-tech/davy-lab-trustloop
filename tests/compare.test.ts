@@ -13,6 +13,11 @@ describe("stable-ID report comparison",()=>{
   expect(c.summary.regressed).toBe(1);
   expect(c.targetMatches).toBe(true);
  });
+ it("does not count a failing check becoming blocked as a fix",()=>{
+  const c=compareReports(report([check("auth","BLOCKED")],"after"),report([check("auth","FAIL")],"before"));
+  expect(c.summary.improved).toBe(0);
+  expect(c.summary.regressed).toBe(1);
+ });
  it("reports new and removed checks",()=>{
   const c=compareReports(report([check("new","BLOCKED")],"b"),report([check("old","PASS")],"a"));
   expect(c.summary.new).toBe(1);
