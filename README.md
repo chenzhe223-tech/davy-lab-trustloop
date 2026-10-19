@@ -24,3 +24,15 @@ pnpm test:site
 Set `TARGET_URL` and `TRUSTLOOP_ALLOWED_HOSTS` before running the site test. Reports are written to `reports/latest/`. Exit codes: `0` PASS, `1` quality failure, `2` configuration/runner error, `3` critical security gate failed or unverified.
 
 This is an early scaffold, not a security certification. NianBox-specific security adapters and a full CI verification pass are still pending.
+
+## NianBox adapter (Phase 2)
+
+The first adapter version defines eight stable check IDs and safe test/evidence contracts. It does **not** yet execute authenticated or state-changing scenarios; those remain BLOCKED until isolated test fixtures and specific evidence collectors are implemented.
+
+For a test/staging deployment only, set:
+- `TRUSTLOOP_ADAPTER=niantou-box`
+- `TRUSTLOOP_ENVIRONMENT=staging` (or `test` / `local`)
+- `TRUSTLOOP_TEST_ACCOUNT_LABEL` to a non-secret label for a disposable test account
+- `TARGET_URL` and `TRUSTLOOP_ALLOWED_HOSTS` to the exact test host
+
+Then run `pnpm test:site`. The report includes NianBox-specific check IDs and keeps unimplemented checks BLOCKED. Do not set the adapter to production or use production data.
