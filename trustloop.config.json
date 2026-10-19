@@ -5,7 +5,8 @@
     "requireExplicitHostAllowlist": true,
     "failClosedOnUnverifiedCriticalSecurityChecks": true,
     "redactSensitiveHeaders": true,
-    "captureScreenshotsOnFailure": true
+    "captureScreenshots": false,
+    "screenshotsRequireExplicitOptIn": true
   },
   "criticalChecks": [
     "security.authn.session-handling",
