@@ -22,3 +22,13 @@
 - [ ] Local persistence and offline recovery
 
 Every security PASS needs reproducible evidence and a documented test method. Missing evidence means BLOCKED.
+
+
+## Phase 2: NianBox adapter
+- [ ] Adapter config rejects production mode and production-looking hosts.
+- [ ] Adapter requires an exact host allowlist and disposable test-account label.
+- [ ] Stable checks exist for session expiry, logout revocation, client-side encryption, key recovery, device revocation, cloud plaintext readability, cross-device sync, and local persistence.
+- [ ] All unimplemented adapter checks remain BLOCKED.
+- [ ] Stateful tests remain opt-in and are never run against production.
+- [ ] Evidence includes repeatable method and synthetic fixture hashes, not raw sensitive content.
+- [ ] Adapter-specific test execution is verified in GitHub Actions.
