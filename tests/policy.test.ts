@@ -17,6 +17,7 @@ describe("safe defaults",()=>{
  it("allows GET",()=>expect(shouldBlockRequest("GET")).toBe(false));
  it("redacts sensitive headers",()=>expect(redactHeaders({Authorization:"Bearer x",Cookie:"sid=x","Content-Type":"application/json"})).toEqual({Authorization:"[REDACTED]",Cookie:"[REDACTED]","Content-Type":"application/json"}));
  it("redacts secret-like query params",()=>expect(safeUrl("https://test.example.com/?token=abc&view=home")).toContain("token=%5BREDACTED%5D"));
+ it("removes URL fragments that may contain access tokens",()=>expect(safeUrl("https://test.example.com/app#access_token=supersecret")).not.toContain("supersecret"));
  it("redacts secret-bearing URLs in diagnostics",()=>expect(redactDiagnostic("failed https://test.example.com/?token=supersecret")).not.toContain("supersecret"));
 });
 it("blocks release if a critical check is unverified",()=>{
