@@ -15,10 +15,12 @@ export interface ReportComparison {
   summary: { improved: number; regressed: number; unchanged: number; new: number; removed: number };
   changes: CheckChange[];
 }
-const rank: Record<CheckResult["status"], number> = { PASS: 0, SKIP: 1, BLOCKED: 2, FAIL: 3, ERROR: 4 };
 function classify(before: CheckResult["status"], after: CheckResult["status"]): CheckChange["change"] {
   if (before === after) return "unchanged";
-  return rank[after] < rank[before] ? "improved" : "regressed";
+  // Only a verified PASS is a confirmed improvement. Losing evidence (e.g. FAIL -> BLOCKED)
+  // must never be reported as a fix.
+  if (after === "PASS") return "improved";
+  return "regressed";
 }
 export function compareReports(current: TrustLoopReport, baseline: TrustLoopReport): ReportComparison {
   const a = new Map(baseline.checks.map(c => [c.id, c]));
