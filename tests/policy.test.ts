@@ -1,5 +1,5 @@
 import {describe,it,expect} from "vitest";
-import {validateTarget,shouldBlockRequest,redactHeaders,safeUrl,isAllowedRequestUrl,redactDiagnostic} from "../src/policy.js";
+import {validateTarget,validateSafeEnvironment,shouldBlockRequest,redactHeaders,safeUrl,isAllowedRequestUrl,redactDiagnostic} from "../src/policy.js";
 import {makeReport} from "../src/report.js";
 import type {CheckResult} from "../src/types.js";
 describe("target allowlist",()=>{
@@ -22,4 +22,20 @@ describe("safe defaults",()=>{
 it("blocks release if a critical check is unverified",()=>{
  const c:CheckResult={id:"security.e2ee",category:"security",severity:"critical",status:"BLOCKED",title:"E2EE",details:"Unverified",critical:true};
  expect(makeReport("https://staging.example.com",[c],new Date().toISOString()).status).toBe("BLOCKED");
+});
+
+describe("safe execution environment",()=>{
+ it("requires explicit local/test/staging mode",()=>{
+  const target=new URL("https://staging.example.test");
+  expect(()=>validateSafeEnvironment(undefined,target)).toThrow(/must be explicitly set/i);
+  expect(()=>validateSafeEnvironment("production",target)).toThrow(/production is not supported/i);
+  expect(validateSafeEnvironment("staging",target)).toBe("staging");
+ });
+ it("requires loopback for local mode",()=>{
+  expect(()=>validateSafeEnvironment("local",new URL("https://staging.example.test"))).toThrow(/loopback/i);
+  expect(validateSafeEnvironment("local",new URL("http://127.0.0.1:4173"))).toBe("local");
+ });
+ it("rejects production-looking hosts in test mode",()=>{
+  expect(()=>validateSafeEnvironment("test",new URL("https://prod.example.test"))).toThrow(/Production-looking/i);
+ });
 });
