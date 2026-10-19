@@ -33,7 +33,11 @@ try{
  const response=await page.goto(url.toString(),{waitUntil:"domcontentloaded",timeout:30000});
  add(response&&response.status()<400?{id:"site.reachable",category:"availability",severity:"high",status:"PASS",title:"Target is reachable",details:`HTTP ${response.status()}`,critical:false}:{id:"site.reachable",category:"availability",severity:"high",status:"FAIL",title:"Target is not reachable",details:`HTTP ${response?.status()??"no response"}`,critical:false,repairHint:"Check deployment health and test URL."});
  add(errors.length?{id:"page.no-console-errors",category:"runtime",severity:"medium",status:"FAIL",title:"Browser console errors detected",details:errors.slice(0,20).join("\n"),critical:false,repairHint:"Fix observed browser errors and add regression tests."}:{id:"page.no-console-errors",category:"runtime",severity:"medium",status:"PASS",title:"No browser console errors",details:"No console or uncaught page errors observed during initial load.",critical:false});
- await fs.mkdir(path.join(out,"evidence"),{recursive:true});try{await page.screenshot({path:path.join(out,"evidence","initial-load.png"),fullPage:true,timeout:10000});}catch{}
+ if (process.env.TRUSTLOOP_CAPTURE_SCREENSHOTS === "true") {
+   await fs.mkdir(path.join(out,"evidence"),{recursive:true});
+   try { await page.screenshot({path:path.join(out,"evidence","initial-load.png"),fullPage:true,timeout:10000}); }
+   catch (e) { console.warn("Screenshot capture failed: " + redactDiagnostic((e as Error).message)); }
+ }
 }catch(e){add({id:"site.reachable",category:"availability",severity:"high",status:"ERROR",title:"Navigation failed",details:redactDiagnostic((e as Error).message),critical:false});}finally{await browser.close();}
 if (adapter === "niantou-box") {
   checks.push(...pendingNianBoxChecks());
