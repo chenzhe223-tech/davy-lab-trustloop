@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "policy": {
+    "blockStateChangingRequests": true,
+    "requireExplicitHostAllowlist": true,
+    "failClosedOnUnverifiedCriticalSecurityChecks": true,
+    "redactSensitiveHeaders": true,
+    "captureScreenshotsOnFailure": true
+  },
+  "criticalChecks": [
+    "security.authn.session-handling",
+    "security.e2ee.client-encryption",
+    "security.key-recovery",
+    "security.device-revocation",
+    "security.cloud-plaintext-readability"
+  ]
+}
