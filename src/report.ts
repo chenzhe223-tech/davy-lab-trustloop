@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { CheckResult, TrustLoopReport, ReportStatus } from "./types.js";
-export function makeReport(url: string, checks: CheckResult[], startedAt: string): TrustLoopReport {
+export function makeReport(url: string, checks: CheckResult[], startedAt: string, declaredEnvironment?: TrustLoopReport["target"]["environment"]): TrustLoopReport {
   const passed=checks.filter(c=>c.status==="PASS").length;
   const failed=checks.filter(c=>c.status==="FAIL"||c.status==="ERROR").length;
   const blocked=checks.filter(c=>c.status==="BLOCKED").length;
