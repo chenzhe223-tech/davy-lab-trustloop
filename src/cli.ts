@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "@playwright/test";
-import { validateTarget, shouldBlockRequest, isAllowedRequestUrl, safeUrl, redactDiagnostic } from "./policy.js";
+import { validateTarget, validateSafeEnvironment, shouldBlockRequest, isAllowedRequestUrl, safeUrl, redactDiagnostic } from "./policy.js";
 import { makeReport, writeReports } from "./report.js";
 import type { CheckResult } from "./types.js";
 import { loadNianBoxAdapterConfig, pendingNianBoxChecks } from "./adapters/niantou-box.js";
@@ -12,7 +12,7 @@ const target=args.url||process.env.TARGET_URL||"";
 const out=args.out||process.env.TRUSTLOOP_OUT||"reports/latest";
 const allow=(process.env.TRUSTLOOP_ALLOWED_HOSTS||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
 let url:URL;
-try{url=validateTarget(target,allow);}catch(e){console.error(`TrustLoop config error: ${(e as Error).message}`);process.exit(2);}
+try{url=validateTarget(target,allow);validateSafeEnvironment(process.env.TRUSTLOOP_ENVIRONMENT,url);}catch(e){console.error(`TrustLoop config error: ${(e as Error).message}`);process.exit(2);}
 const adapter = process.env.TRUSTLOOP_ADAPTER || "generic";
 if (adapter !== "generic" && adapter !== "niantou-box") { console.error("Unknown TRUSTLOOP_ADAPTER. Supported: generic, niantou-box."); process.exit(2); }
 if (adapter === "niantou-box") {
