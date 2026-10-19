@@ -35,3 +35,14 @@ describe("report contract",()=>{
     expect(md).not.toContain("### 1. [MEDIUM] No console errors");
   });
 });
+
+describe("declared environment metadata",()=>{
+  it("records the declared environment instead of guessing from hostnames",()=>{
+    const r=makeReport("https://preview.example.test",[],new Date().toISOString(),"test");
+    expect(r.target.environment).toBe("test");
+  });
+  it("does not label arbitrary remote hosts as staging based on URL text",()=>{
+    const r=makeReport("https://my-testimonial-site.example",[],new Date().toISOString());
+    expect(r.target.environment).toBe("unknown");
+  });
+});
