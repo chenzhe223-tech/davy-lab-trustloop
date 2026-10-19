@@ -35,6 +35,7 @@ describe("safe execution environment",()=>{
  it("requires loopback for local mode",()=>{
   expect(()=>validateSafeEnvironment("local",new URL("https://staging.example.test"))).toThrow(/loopback/i);
   expect(validateSafeEnvironment("local",new URL("http://127.0.0.1:4173"))).toBe("local");
+  expect(validateSafeEnvironment("local",new URL("http://[::1]:4173"))).toBe("local");
  });
  it("rejects production-looking hosts in test mode",()=>{
   expect(()=>validateSafeEnvironment("test",new URL("https://prod.example.test"))).toThrow(/Production-looking/i);
