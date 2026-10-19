@@ -21,7 +21,7 @@ pnpm verify
 pnpm test:site
 ```
 
-Set `TARGET_URL` and `TRUSTLOOP_ALLOWED_HOSTS` before running the site test. Reports are written to `reports/latest/`. Exit codes: `0` PASS, `1` quality failure, `2` configuration/runner error, `3` critical security gate failed or unverified.
+Set `TARGET_URL`, `TRUSTLOOP_ALLOWED_HOSTS`, and `TRUSTLOOP_ENVIRONMENT=local|test|staging` before running the site test. Every run requires an explicit non-production environment; production mode and production-looking hosts are rejected. Reports are written to `reports/latest/`. Exit codes: `0` PASS, `1` quality failure, `2` configuration/runner error, `3` critical security gate failed or unverified.
 
 This is an early scaffold, not a security certification. NianBox-specific security adapters and a full CI verification pass are still pending.
 
