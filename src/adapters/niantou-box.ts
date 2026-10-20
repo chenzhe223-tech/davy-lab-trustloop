@@ -197,6 +197,19 @@ export async function runNianBoxStagingChecks(config: NianBoxAdapterConfig): Pro
       logoutDetails = "BLOCKED: session revocation test requires a valid disposable test session.";
     } else {
       baselineB = cursorB;
+      const loginOther = await requestJson(config, "/auth/login", undefined, "POST", {
+        email: config.testEmailB, password: config.testPasswordB, deviceLabel: config.testAccountLabel + "-isolation"
+      });
+      const loginBodyOther = loginOther.body;
+      const cursorOther = numeric(loginBodyOther?.cursor);
+      if (typeof loginBodyOther?.token === "string") tokenOther = loginBodyOther.token;
+      if (loginOther.status !== 200 || typeof tokenOther !== "string" || cursorOther === null) {
+        isolationStatus = "BLOCKED";
+        isolationDetails = "A separate disposable account could not be established (HTTP " + loginOther.status + "); isolation was not tested.";
+      } else {
+        baselineOther = cursorOther;
+        isolationDetails = "Second disposable account is ready; isolation assertion will run after the synthetic record is created.";
+      }
       let contentUpdated = false;
       try {
         const createdAt = Date.now();
