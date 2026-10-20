@@ -226,6 +226,20 @@ export async function runNianBoxStagingChecks(config: NianBoxAdapterConfig): Pro
           syncStatus = "FAIL";
           syncDetails = "Initial synthetic record write was not acknowledged as applied (HTTP " + initialWrite.status + ").";
         } else {
+          if (tokenOther && baselineOther !== null) {
+            const otherPull = await requestJson(config, "/sync/pull?since=" + encodeURIComponent(String(baselineOther)), tokenOther);
+            const otherIdeas = Array.isArray(otherPull.body?.ideas) ? otherPull.body.ideas.map(asObject) : null;
+            if (otherPull.status === 200 && otherIdeas !== null) {
+              const otherSawFixture = otherIdeas.some(item => item?.id === recordId);
+              isolationStatus = otherSawFixture ? "FAIL" : "PASS";
+              isolationDetails = otherSawFixture
+                ? "FAIL: the second disposable account received the first account's synthetic record."
+                : "PASS: the separate account could not read the synthetic record. Record identifiers were not included in evidence.";
+            } else {
+              isolationStatus = "ERROR";
+              isolationDetails = "The separate account could not complete a valid sync pull (HTTP " + otherPull.status + "); isolation remains unverified.";
+            }
+          }
           const readOnB = await requestJson(config, "/sync/pull?since=" + encodeURIComponent(String(baselineB)), tokenB);
           const ideasB = Array.isArray(readOnB.body?.ideas) ? readOnB.body.ideas.map(asObject) : [];
           const foundB = ideasB.find(item => item?.id === recordId);
