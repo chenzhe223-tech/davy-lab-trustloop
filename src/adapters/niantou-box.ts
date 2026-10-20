@@ -164,7 +164,7 @@ export async function runNianBoxStagingChecks(config: NianBoxAdapterConfig): Pro
       return checks.map(c => c.id === "nianbox.sync.cross-device-integrity" ? {...c,status:"BLOCKED",details:syncDetails}
         : c.id === "nianbox.auth.logout-revocation" ? {...c,status:"BLOCKED",details:logoutDetails} : c);
     }
-    baselineA = numeric(loginBodyA.cursor);
+    baselineA = cursorA;
 
     const loginB = await requestJson(config, "/auth/login", undefined, "POST", {
       email: config.testEmail, password: config.testPassword, deviceLabel: config.testAccountLabel + "-b"
