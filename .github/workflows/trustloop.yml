@@ -22,6 +22,12 @@ jobs:
       TRUSTLOOP_ADAPTER: ${{ vars.TRUSTLOOP_ADAPTER || 'generic' }}
       TRUSTLOOP_ENVIRONMENT: ${{ vars.TRUSTLOOP_ENVIRONMENT }}
       TRUSTLOOP_TEST_ACCOUNT_LABEL: ${{ vars.TRUSTLOOP_TEST_ACCOUNT_LABEL }}
+      # Stateful NianBox writes are disabled on push/PR. Enable only for a manual staging dispatch.
+      TRUSTLOOP_NIANBOX_STATEFUL_TESTS: ${{ github.event_name == 'workflow_dispatch' && vars.TRUSTLOOP_NIANBOX_STATEFUL_TESTS || 'false' }}
+      TRUSTLOOP_NIANBOX_STAGING_CONFIRMATION: ${{ secrets.TRUSTLOOP_NIANBOX_STAGING_CONFIRMATION }}
+      TRUSTLOOP_NIANBOX_CLOUD_URL: ${{ vars.TRUSTLOOP_NIANBOX_CLOUD_URL }}
+      TRUSTLOOP_NIANBOX_TEST_EMAIL: ${{ secrets.TRUSTLOOP_NIANBOX_TEST_EMAIL }}
+      TRUSTLOOP_NIANBOX_TEST_PASSWORD: ${{ secrets.TRUSTLOOP_NIANBOX_TEST_PASSWORD }}
       TRUSTLOOP_OUT: reports/latest
     steps:
       - uses: actions/checkout@v4
