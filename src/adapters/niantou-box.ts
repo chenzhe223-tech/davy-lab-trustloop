@@ -91,9 +91,22 @@ export function loadNianBoxAdapterConfig(env: NodeJS.ProcessEnv): NianBoxAdapter
   if (testPassword.length < 8 || testPassword.length > 200) {
     throw new Error("Set TRUSTLOOP_NIANBOX_TEST_PASSWORD for that disposable test account (8–200 characters).");
   }
+  const testEmailB = (env.TRUSTLOOP_NIANBOX_TEST_EMAIL_B || "").trim();
+  const testPasswordB = env.TRUSTLOOP_NIANBOX_TEST_PASSWORD_B || "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmailB) || testEmailB.length > 200) {
+    throw new Error("Set TRUSTLOOP_NIANBOX_TEST_EMAIL_B to a second dedicated disposable account.");
+  }
+  if (testEmailB.toLowerCase() === testEmail.toLowerCase()) {
+    throw new Error("NianBox account-isolation testing requires two different test account emails.");
+  }
+  if (testPasswordB.length < 8 || testPasswordB.length > 200) {
+    throw new Error("Set TRUSTLOOP_NIANBOX_TEST_PASSWORD_B for the second disposable account (8–200 characters).");
+  }
   config.cloudUrl = cloud.origin;
   config.testEmail = testEmail;
   config.testPassword = testPassword;
+  config.testEmailB = testEmailB;
+  config.testPasswordB = testPasswordB;
   return config;
 }
 export function pendingNianBoxChecks(): CheckResult[] {
