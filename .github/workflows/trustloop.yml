@@ -52,7 +52,7 @@ jobs:
           {
             echo "## TrustLoop verification scope"
             echo ""
-            echo "- Unit/type verification: see the `verify` step above."
+            printf '%s\\n' '- Unit/type verification: see the `verify` step above.'
             if [ -n "$TARGET_URL" ]; then
               echo "- Target smoke test: attempted against the explicitly configured target."
               echo "- Target hostname: $(node -e 'try { console.log(new URL(process.env.TARGET_URL).hostname) } catch { console.log("invalid-or-unset") }')"
@@ -60,7 +60,7 @@ jobs:
               echo "- Adapter: ${TRUSTLOOP_ADAPTER:-generic}"
             else
               echo "- Target smoke test: **NOT RUN**."
-              echo "- Reason: no `workflow_dispatch` target URL or `TRUSTLOOP_TARGET_URL` repository variable was supplied."
+              printf '%s\\n' '- Reason: no `workflow_dispatch` target URL or `TRUSTLOOP_TARGET_URL` repository variable was supplied.'
               echo "- This run must not be interpreted as end-to-end or security verification."
             fi
             echo "- Critical security checks remain blocked unless the report provides reproducible evidence."
