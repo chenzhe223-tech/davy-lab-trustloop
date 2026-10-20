@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/nianbox-staging-smoke.yml"
       - "docs/DELIVERY-ACCEPTANCE.md"
+      - "staging-ui/worker.js"
   workflow_dispatch:
 
 permissions:
@@ -18,6 +19,7 @@ jobs:
     timeout-minutes: 5
     env:
       STAGING_BASE_URL: https://nianbox-cloud-trustloop-staging.chenzhe223.workers.dev
+      STAGING_UI_URL: https://nianbox-trustloop-staging-ui.chenzhe223.workers.dev
     steps:
       - name: Verify /health
         shell: bash
@@ -45,6 +47,16 @@ jobs:
             }
             console.log("PASS /capabilities; returned keys=" + Object.keys(r).sort().join(","));
           ' "$response"
+      - name: Verify staging acceptance console
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --retry 3 --retry-all-errors --retry-delay 2 --fail --silent --show-error --max-time 15 -D /tmp/staging-ui-headers.txt "${STAGING_UI_URL}/" -o /tmp/staging-ui.html
+          grep -q "NianBox Staging" /tmp/staging-ui.html
+          grep -q "STAGING ONLY" /tmp/staging-ui.html
+          grep -qi "^content-security-policy:" /tmp/staging-ui-headers.txt
+          grep -qi "^x-content-type-options: nosniff" /tmp/staging-ui-headers.txt
+          echo "PASS staging acceptance console HTML and security headers."
       - name: State verification boundary
         if: always()
         shell: bash
