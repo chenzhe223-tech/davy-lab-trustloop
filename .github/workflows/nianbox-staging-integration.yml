@@ -1,0 +1,38 @@
+name: NianBox Staging Authenticated Integration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/nianbox-staging-integration.mjs"
+      - ".github/workflows/nianbox-staging-integration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  staging-integration:
+    name: Two-account staging sync and isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Execute staging-only API acceptance
+        run: node scripts/nianbox-staging-integration.mjs
+      - name: State verification boundary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## NianBox staging authenticated integration"
+            echo ""
+            echo "- Target: dedicated staging Worker and staging-only D1 database."
+            echo "- Created only randomly named temporary accounts and synthetic content."
+            echo "- The test attempts to purge its generated note and fails if cleanup cannot be confirmed."
+            echo "- Temporary test-account rows may remain in the isolated staging database and should be cleaned after acceptance."
+            echo "- This is API-level integration evidence, not browser/mobile UI evidence or an E2EE certification."
+          } >> "$GITHUB_STEP_SUMMARY"
