@@ -4,7 +4,7 @@ import { chromium } from "@playwright/test";
 import { validateTarget, validateSafeEnvironment, shouldBlockRequest, isAllowedRequestUrl, safeUrl, redactDiagnostic } from "./policy.js";
 import { makeReport, writeReports } from "./report.js";
 import type { CheckResult } from "./types.js";
-import { loadNianBoxAdapterConfig, pendingNianBoxChecks } from "./adapters/niantou-box.js";
+import { loadNianBoxAdapterConfig, pendingNianBoxChecks, runNianBoxStagingChecks } from "./adapters/niantou-box.js";
 import { compareReports, renderComparisonMarkdown } from "./compare.js";
 function parseArgs(a:string[]){const o:Record<string,string>={};for(let i=0;i<a.length;i++)if(a[i]?.startsWith("--")){const k=a[i]!.slice(2);o[k]=a[i+1]&&!a[i+1]!.startsWith("--")?a[++i]!:"true";}return o;}
 const args=parseArgs(process.argv.slice(2));
@@ -14,11 +14,12 @@ const allow=(process.env.TRUSTLOOP_ALLOWED_HOSTS||"").split(",").map(x=>x.trim()
 let url:URL;
 try{url=validateTarget(target,allow);validateSafeEnvironment(process.env.TRUSTLOOP_ENVIRONMENT,url);}catch(e){console.error(`TrustLoop config error: ${(e as Error).message}`);process.exit(2);}
 const adapter = process.env.TRUSTLOOP_ADAPTER || "generic";
+let nianBoxConfig: ReturnType<typeof loadNianBoxAdapterConfig> | undefined;
 if (adapter !== "generic" && adapter !== "niantou-box") { console.error("Unknown TRUSTLOOP_ADAPTER. Supported: generic, niantou-box."); process.exit(2); }
 if (adapter === "niantou-box") {
   try {
-    const cfg = loadNianBoxAdapterConfig(process.env);
-    if (new URL(cfg.targetUrl).hostname !== url.hostname) throw new Error("Adapter TARGET_URL must match CLI target host.");
+    nianBoxConfig = loadNianBoxAdapterConfig(process.env);
+    if (new URL(nianBoxConfig.targetUrl).hostname !== url.hostname) throw new Error("Adapter TARGET_URL must match CLI target host.");
   } catch(e) { console.error(`NianBox adapter config error: ${(e as Error).message}`); process.exit(2); }
 }
 const started=new Date().toISOString();const checks:CheckResult[]=[];const add=(c:CheckResult)=>checks.push(c);
@@ -39,8 +40,21 @@ try{
    catch (e) { console.warn("Screenshot capture failed: " + redactDiagnostic((e as Error).message)); }
  }
 }catch(e){add({id:"site.reachable",category:"availability",severity:"high",status:"ERROR",title:"Navigation failed",details:redactDiagnostic((e as Error).message),critical:false});}finally{await browser.close();}
-if (adapter === "niantou-box") {
-  checks.push(...pendingNianBoxChecks());
+if (adapter === "niantou-box" && nianBoxConfig) {
+  if (nianBoxConfig.statefulTestsEnabled) {
+    try {
+      checks.push(...await runNianBoxStagingChecks(nianBoxConfig));
+    } catch {
+      // Never include raw fetch errors, credential fragments, or response bodies in reports.
+      checks.push(...pendingNianBoxChecks().map(check =>
+        check.id === "nianbox.auth.logout-revocation" || check.id === "nianbox.sync.cross-device-integrity"
+          ? {...check, status:"ERROR" as const, details:"Staging integration test did not complete; raw errors, response bodies, and credentials were withheld."}
+          : check
+      ));
+    }
+  } else {
+    checks.push(...pendingNianBoxChecks());
+  }
 } else {
 for(const [id,title,details] of [
  ["security.authn.session-handling","Authentication and session handling","Target-specific authentication tests are not configured; unverified."],
