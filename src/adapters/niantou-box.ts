@@ -158,7 +158,7 @@ export async function runNianBoxStagingChecks(config: NianBoxAdapterConfig): Pro
     const loginBodyA = loginA.body;
     const cursorA = numeric(loginBodyA?.cursor);
     if (typeof loginBodyA?.token === "string") tokenA = loginBodyA.token;
-    if (loginA.status !== 200 || typeof tokenA !== "string" || numeric(loginBodyA?.cursor) === null) {
+    if (loginA.status !== 200 || typeof tokenA !== "string" || cursorA === null) {
       syncDetails = "BLOCKED: first disposable test session could not be established (HTTP " + loginA.status + "); response body withheld.";
       logoutDetails = "BLOCKED: session revocation test requires a valid disposable test session.";
       return checks.map(c => c.id === "nianbox.sync.cross-device-integrity" ? {...c,status:"BLOCKED",details:syncDetails}
