@@ -156,6 +156,7 @@ export async function runNianBoxStagingChecks(config: NianBoxAdapterConfig): Pro
       email: config.testEmail, password: config.testPassword, deviceLabel: config.testAccountLabel + "-a"
     });
     const loginBodyA = loginA.body;
+    const cursorA = numeric(loginBodyA?.cursor);
     if (typeof loginBodyA?.token === "string") tokenA = loginBodyA.token;
     if (loginA.status !== 200 || typeof tokenA !== "string" || numeric(loginBodyA?.cursor) === null) {
       syncDetails = "BLOCKED: first disposable test session could not be established (HTTP " + loginA.status + "); response body withheld.";
