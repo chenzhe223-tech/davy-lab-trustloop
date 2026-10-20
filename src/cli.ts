@@ -18,7 +18,7 @@ let nianBoxConfig: ReturnType<typeof loadNianBoxAdapterConfig> | undefined;
 if (adapter !== "generic" && adapter !== "niantou-box") { console.error("Unknown TRUSTLOOP_ADAPTER. Supported: generic, niantou-box."); process.exit(2); }
 if (adapter === "niantou-box") {
   try {
-    nianBoxConfig = loadNianBoxAdapterConfig(process.env);
+    nianBoxConfig = loadNianBoxAdapterConfig({...process.env, TARGET_URL: process.env.TARGET_URL || target});
     if (new URL(nianBoxConfig.targetUrl).hostname !== url.hostname) throw new Error("Adapter TARGET_URL must match CLI target host.");
   } catch(e) { console.error(`NianBox adapter config error: ${(e as Error).message}`); process.exit(2); }
 }
