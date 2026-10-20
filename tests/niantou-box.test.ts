@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { NIANBOX_CHECKS, loadNianBoxAdapterConfig, pendingNianBoxChecks } from "../src/adapters/niantou-box.js";
+import { afterEach, describe, it, expect, vi } from "vitest";
+import { NIANBOX_CHECKS, loadNianBoxAdapterConfig, pendingNianBoxChecks, runNianBoxStagingChecks } from "../src/adapters/niantou-box.js";
 const baseEnv = {
   TRUSTLOOP_ENVIRONMENT:"staging", TARGET_URL:"https://niantou-staging.example.test",
   TRUSTLOOP_ALLOWED_HOSTS:"niantou-staging.example.test", TRUSTLOOP_TEST_ACCOUNT_LABEL:"trustloop-disposable-user-a"
@@ -70,5 +70,58 @@ describe("NianBox adapter guardrails",()=>{
       .toThrow(/clearly marked staging\/test\/preview/i);
     expect(()=>loadNianBoxAdapterConfig({...statefulEnv,TRUSTLOOP_NIANBOX_CLOUD_URL:"https://cloud.example.com",TRUSTLOOP_ALLOWED_HOSTS:"niantou-staging.example.test,cloud.example.com"}))
       .toThrow(/clearly marked staging\/test\/preview/i);
+  });
+
+  it("runs the two-session sync and logout flow against a mocked staging API",async()=>{
+    const records = new Map<string, Record<string, unknown>>();
+    const invalidated = new Set<string>();
+    const seenUrls: string[] = [];
+    let loginCount = 0;
+    vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
+      const method = init?.method || "GET";
+      const token = new Headers(init?.headers).get("authorization")?.replace(/^Bearer\s+/i,"") || "";
+      seenUrls.push(url.pathname + url.search);
+      const send = (status:number, body:Record<string,unknown>) => new Response(JSON.stringify(body),{
+        status,headers:{"content-type":"application/json"}
+      });
+      if (url.pathname === "/auth/login" && method === "POST") {
+        loginCount += 1;
+        return send(200,{token:loginCount === 1 ? "mock-token-a" : "mock-token-b",cursor:10});
+      }
+      if (url.pathname === "/sync/push" && method === "POST") {
+        const body = JSON.parse(String(init?.body || "{}")) as {ops?:Array<Record<string,unknown>>};
+        const ops = body.ops || [];
+        const results = ops.map(op => {
+          const id = String(op.id || "");
+          if (op.op === "purge") records.delete(id);
+          else if (op.doc && typeof op.doc === "object") records.set(id,{...(op.doc as Record<string,unknown>),seq:11,serverUpdatedAt:(op.doc as Record<string,unknown>).updatedAt});
+          return {id,status:"applied",seq:11};
+        });
+        return send(200,{cursor:11,results});
+      }
+      if (url.pathname === "/sync/pull" && method === "GET") {
+        if (invalidated.has(token)) return send(401,{error:"unauthenticated"});
+        return send(200,{full:false,cursor:11,ideas:[...records.values()]});
+      }
+      if (url.pathname === "/auth/logout" && method === "POST") {
+        invalidated.add(token);
+        return send(200,{ok:true});
+      }
+      if (url.pathname === "/auth/me" && method === "GET") {
+        return invalidated.has(token) ? send(401,{error:"unauthenticated"}) : send(200,{user:{id:"synthetic"},devices:[]});
+      }
+      return send(404,{error:"unexpected mocked route"});
+    });
+    try {
+      const checks=await runNianBoxStagingChecks(loadNianBoxAdapterConfig(statefulEnv));
+      expect(checks.find(c=>c.id==="nianbox.sync.cross-device-integrity")?.status).toBe("PASS");
+      expect(checks.find(c=>c.id==="nianbox.auth.logout-revocation")?.status).toBe("PASS");
+      expect(seenUrls).toContain("/auth/logout");
+      expect(checks.map(c=>c.details).join(" ")).not.toContain("mock-token");
+      expect(records.size).toBe(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
