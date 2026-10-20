@@ -1,0 +1,58 @@
+name: NianBox Staging Runtime Smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/nianbox-staging-smoke.yml"
+      - "docs/DELIVERY-ACCEPTANCE.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  staging-runtime:
+    name: Read-only staging health and capabilities
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      STAGING_BASE_URL: https://nianbox-cloud-trustloop-staging.chenzhe223.workers.dev
+    steps:
+      - name: Verify /health
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --retry 3 --retry-all-errors --retry-delay 2 --fail --silent --show-error --max-time 15 "${STAGING_BASE_URL}/health")"
+          node -e '
+            const r = JSON.parse(process.argv[1]);
+            if (r?.ok !== true) {
+              console.error("Health response did not contain ok:true");
+              process.exit(1);
+            }
+            console.log("PASS /health; service=" + String(r.service || "unspecified") + "; version=" + String(r.version ?? "unspecified"));
+          ' "$response"
+      - name: Verify /capabilities
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --retry 3 --retry-all-errors --retry-delay 2 --fail --silent --show-error --max-time 15 "${STAGING_BASE_URL}/capabilities")"
+          node -e '
+            const r = JSON.parse(process.argv[1]);
+            if (!r || typeof r !== "object" || Array.isArray(r)) {
+              console.error("Capabilities response was not a JSON object");
+              process.exit(1);
+            }
+            console.log("PASS /capabilities; returned keys=" + Object.keys(r).sort().join(","));
+          ' "$response"
+      - name: State verification boundary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## NianBox staging runtime smoke"
+            echo ""
+            echo "- Scope: read-only GET requests to the dedicated staging Worker."
+            echo "- No accounts were created, no notes were written, and no credentials were used."
+            echo "- This does not verify authenticated sync, account isolation, encryption, or mobile browser behavior."
+          } >> "$GITHUB_STEP_SUMMARY"
