@@ -79,7 +79,7 @@ if (args.compare) {
     await fs.writeFile(path.join(out, "comparison.json"), JSON.stringify(comparison, null, 2) + "\n");
     await fs.writeFile(path.join(out, "comparison.md"), renderComparisonMarkdown(comparison));
     console.log("Comparison: improved=" + comparison.summary.improved + ", regressed=" + comparison.summary.regressed + ", targetMatches=" + comparison.targetMatches);
-  } catch (e) { console.error("Comparison failed: " + redactDiagnostic((e as Error).message)); process.exitCode = Math.max(process.exitCode || 0, 2); }
+  } catch (e) { console.error("Comparison failed: " + redactDiagnostic((e as Error).message)); setExitCodeAtLeast(2); }
 }
 console.log(`TrustLoop: ${report.status}\nReports: ${path.resolve(out)}`);
 if(report.status==="BLOCKED") setExitCodeAtLeast(3); else if(report.status==="FAIL") setExitCodeAtLeast(1);
