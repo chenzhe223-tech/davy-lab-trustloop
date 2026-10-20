@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "template": "davy-lab-standard-app",
+  "stage": "starter-local-first",
+  "stack": {
+    "frontend": "React + TypeScript + Vite",
+    "localStorage": "IndexedDB",
+    "testRunner": "Vitest",
+    "cloudSync": "adapter-interface-only; not connected by default"
+  },
+  "routes": [{ "path": "/", "purpose": "Record inbox and local CRUD demonstration" }],
+  "dataPolicy": {
+    "defaultNetworkRequests": false,
+    "defaultPersistence": "browser-local IndexedDB",
+    "serverAuthoritativeIdentity": true,
+    "secretsInClientBundle": false,
+    "cloudStateClaimsRequireServerAcknowledgement": true
+  },
+  "acceptance": {
+    "typecheck": "pnpm typecheck",
+    "unitTests": "pnpm test",
+    "productionBuild": "pnpm build",
+    "releaseGate": "pnpm verify"
+  },
+  "deployment": {
+    "basePathEnvironment": "BASE_PATH",
+    "recommendedFirstTarget": "isolated preview or staging",
+    "productionRequiresHumanApproval": true
+  }
+}
