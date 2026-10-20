@@ -14,6 +14,7 @@ let tokenA;
 let tokenA2;
 let tokenB;
 let writeAttempted = false;
+let fixtureCleanupVerified = false;
 let failed = false;
 const results = [];
 
@@ -112,6 +113,7 @@ async function run() {
   const verifyGone = requireOk(await request("/sync/pull",{token:tokenA2}),200,"Verify cleanup");
   const fixtureRemains = (Array.isArray(verifyGone.ideas)?verifyGone.ideas:[]).some(item=>item?.id===fixtureId);
   check("cleanup verified by fresh snapshot",!fixtureRemains,"fresh full snapshot no longer contains the fixture");
+  fixtureCleanupVerified = cleanupApplied && !fixtureRemains;
   if (fixtureRemains) failed = true;
 }
 
@@ -121,6 +123,29 @@ try {
   failed = true;
   console.error("INTEGRATION ERROR: " + (error instanceof Error ? error.message.slice(0,300) : "unknown error"));
 } finally {
+  if (writeAttempted && tokenA2 && !fixtureCleanupVerified) {
+    try {
+      const result = await request("/sync/push",{method:"POST",token:tokenA2,body:{ops:[{entity:"idea",id:fixtureId,op:"purge"}]}});
+      const cleaned = result.status===200 && assertApplied(result.payload,fixtureId);
+      if (!cleaned) {
+        failed = true;
+        console.error("FAIL fallback fixture cleanup; inspect only TrustLoop-generated staging data.");
+      } else {
+        const snapshot = await request("/sync/pull",{token:tokenA2});
+        const remains = snapshot.status===200 && (Array.isArray(snapshot.payload?.ideas)?snapshot.payload.ideas:[]).some(item=>item?.id===fixtureId);
+        if (remains) {
+          failed = true;
+          console.error("FAIL fallback cleanup verification; the generated fixture still appears in staging.");
+        } else {
+          fixtureCleanupVerified = true;
+          console.log("PASS fallback cleanup verified.");
+        }
+      }
+    } catch {
+      failed = true;
+      console.error("FAIL fallback cleanup request; inspect only TrustLoop-generated staging data.");
+    }
+  }
   await Promise.all([logout(tokenA),logout(tokenA2),logout(tokenB)]);
 }
 console.log("NianBox staging integration summary: " + results.filter(r=>r.status==="PASS").length + " PASS, " + results.filter(r=>r.status==="FAIL").length + " FAIL.");
