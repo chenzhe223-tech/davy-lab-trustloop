@@ -1,11 +1,6 @@
 name: NianBox Staging Authenticated Integration
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "scripts/nianbox-staging-integration.mjs"
-      - ".github/workflows/nianbox-staging-integration.yml"
   workflow_dispatch:
 
 permissions:
