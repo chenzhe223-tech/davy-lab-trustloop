@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run tests",
     "test:site": "tsx src/cli.ts",
     "typecheck": "tsc --noEmit",
     "verify": "pnpm typecheck && pnpm test"
