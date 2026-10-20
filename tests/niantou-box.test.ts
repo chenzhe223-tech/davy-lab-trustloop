@@ -11,12 +11,14 @@ const statefulEnv = {
   TRUSTLOOP_NIANBOX_CLOUD_URL:"https://niantou-cloud-staging.example.test",
   TRUSTLOOP_ALLOWED_HOSTS:"niantou-staging.example.test,niantou-cloud-staging.example.test",
   TRUSTLOOP_NIANBOX_TEST_EMAIL:"trustloop-test@example.test",
-  TRUSTLOOP_NIANBOX_TEST_PASSWORD:"synthetic-test-password-123"
+  TRUSTLOOP_NIANBOX_TEST_PASSWORD:"synthetic-test-password-123",
+  TRUSTLOOP_NIANBOX_TEST_EMAIL_B:"trustloop-test-b@example.test",
+  TRUSTLOOP_NIANBOX_TEST_PASSWORD_B:"synthetic-test-password-456"
 } as NodeJS.ProcessEnv;
 describe("NianBox adapter guardrails",()=>{
   it("defines the required security and functional checks",()=>{
     const ids=NIANBOX_CHECKS.map(c=>c.id);
-    for(const id of ["auth.session-expiry","auth.logout-revocation","crypto.client-side-encryption","crypto.key-recovery","security.device-revocation","privacy.cloud-plaintext","sync.cross-device-integrity","storage.local-persistence"]) expect(ids).toContain(id);
+    for(const id of ["auth.session-expiry","auth.logout-revocation","crypto.client-side-encryption","crypto.key-recovery","security.device-revocation","privacy.cloud-plaintext","sync.cross-device-integrity","storage.local-persistence","security.account-isolation"]) expect(ids).toContain(id);
   });
   it("keeps unimplemented checks BLOCKED",()=>{
     const checks=pendingNianBoxChecks();
@@ -57,7 +59,8 @@ describe("NianBox adapter guardrails",()=>{
     const config=loadNianBoxAdapterConfig(statefulEnv);
     expect(config.statefulTestsEnabled).toBe(true);
     expect(config.cloudUrl).toBe("https://niantou-cloud-staging.example.test");
-    expect(config.testEmail).toBe("trustloop-test@example.test");
+        expect(config.testEmail).toBe("trustloop-test@example.test");
+    expect(config.testEmailB).toBe("trustloop-test-b@example.test");
     expect(()=>loadNianBoxAdapterConfig({...statefulEnv,TRUSTLOOP_ALLOWED_HOSTS:"niantou-staging.example.test"}))
       .toThrow(/allowlisted/i);
     expect(()=>loadNianBoxAdapterConfig({...statefulEnv,TRUSTLOOP_NIANBOX_CLOUD_URL:"https://cloud.example.com"}))
@@ -87,7 +90,8 @@ describe("NianBox adapter guardrails",()=>{
       });
       if (url.pathname === "/auth/login" && method === "POST") {
         loginCount += 1;
-        return send(200,{token:loginCount === 1 ? "mock-token-a" : "mock-token-b",cursor:10});
+        const token = loginCount === 1 ? "mock-token-a" : loginCount === 2 ? "mock-token-b" : "mock-token-other";
+        return send(200,{token,cursor:10});
       }
       if (url.pathname === "/sync/push" && method === "POST") {
         const body = JSON.parse(String(init?.body || "{}")) as {ops?:Array<Record<string,unknown>>};
@@ -102,7 +106,8 @@ describe("NianBox adapter guardrails",()=>{
       }
       if (url.pathname === "/sync/pull" && method === "GET") {
         if (invalidated.has(token)) return send(401,{error:"unauthenticated"});
-        return send(200,{full:false,cursor:11,ideas:[...records.values()]});
+        const ideas = token === "mock-token-other" ? [] : [...records.values()];
+        return send(200,{full:false,cursor:11,ideas});
       }
       if (url.pathname === "/auth/logout" && method === "POST") {
         invalidated.add(token);
@@ -117,6 +122,7 @@ describe("NianBox adapter guardrails",()=>{
       const checks=await runNianBoxStagingChecks(loadNianBoxAdapterConfig(statefulEnv));
       expect(checks.find(c=>c.id==="nianbox.sync.cross-device-integrity")?.status).toBe("PASS");
       expect(checks.find(c=>c.id==="nianbox.auth.logout-revocation")?.status).toBe("PASS");
+      expect(checks.find(c=>c.id==="nianbox.security.account-isolation")?.status).toBe("PASS");
       expect(seenUrls).toContain("/auth/logout");
       expect(checks.map(c=>c.details).join(" ")).not.toContain("mock-token");
       expect(records.size).toBe(0);
