@@ -150,7 +150,7 @@ function checkUpdate(checks: CheckResult[], id: NianBoxCheckId, status: CheckSta
 }
 
 export async function runNianBoxStagingChecks(config: NianBoxAdapterConfig): Promise<CheckResult[]> {
-  if (!config.statefulTestsEnabled || !config.cloudUrl || !config.testEmail || !config.testPassword) {
+  if (!config.statefulTestsEnabled || !config.cloudUrl || !config.testEmail || !config.testPassword || !config.testEmailB || !config.testPasswordB) {
     throw new Error("NianBox staging checks require explicit stateful-test opt-in and validated disposable credentials.");
   }
   const checks = pendingNianBoxChecks();
@@ -159,13 +159,17 @@ export async function runNianBoxStagingChecks(config: NianBoxAdapterConfig): Pro
   const updatedMarker = "TrustLoop synthetic updated marker " + recordId;
   let tokenA: string | undefined;
   let tokenB: string | undefined;
+  let tokenOther: string | undefined;
   let baselineA: number | null = null;
   let baselineB: number | null = null;
+  let baselineOther: number | null = null;
   let writeAttempted = false;
   let syncStatus: CheckStatus = "BLOCKED";
   let syncDetails = "Not run: disposable-account login prerequisites were not met.";
   let logoutStatus: CheckStatus = "BLOCKED";
   let logoutDetails = "Not run: disposable-account login prerequisites were not met.";
+  let isolationStatus: CheckStatus = "BLOCKED";
+  let isolationDetails = "Not run: second disposable account prerequisites were not met.";
 
   try {
     const loginA = await requestJson(config, "/auth/login", undefined, "POST", {
