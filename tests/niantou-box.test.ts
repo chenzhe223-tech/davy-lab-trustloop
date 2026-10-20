@@ -77,7 +77,7 @@ describe("NianBox adapter guardrails",()=>{
       .toThrow(/clearly marked staging\/test\/preview/i);
   });
 
-  it("runs the two-session sync and logout flow against a mocked staging API",async()=>{
+  it.each([false,true])("runs the staging flow and enforces account isolation (leak=%s)",async(leakRecord)=>{
     const records = new Map<string, Record<string, unknown>>();
     const invalidated = new Set<string>();
     const seenUrls: string[] = [];
@@ -108,7 +108,7 @@ describe("NianBox adapter guardrails",()=>{
       }
       if (url.pathname === "/sync/pull" && method === "GET") {
         if (invalidated.has(token)) return send(401,{error:"unauthenticated"});
-        const ideas = token === "mock-token-other" ? [] : [...records.values()];
+        const ideas = token === "mock-token-other" && !leakRecord ? [] : [...records.values()];
         return send(200,{full:false,cursor:11,ideas});
       }
       if (url.pathname === "/auth/logout" && method === "POST") {
@@ -124,7 +124,7 @@ describe("NianBox adapter guardrails",()=>{
       const checks=await runNianBoxStagingChecks(loadNianBoxAdapterConfig(statefulEnv));
       expect(checks.find(c=>c.id==="nianbox.sync.cross-device-integrity")?.status).toBe("PASS");
       expect(checks.find(c=>c.id==="nianbox.auth.logout-revocation")?.status).toBe("PASS");
-      expect(checks.find(c=>c.id==="nianbox.security.account-isolation")?.status).toBe("PASS");
+      expect(checks.find(c=>c.id==="nianbox.security.account-isolation")?.status).toBe(leakRecord ? "FAIL" : "PASS");
       expect(seenUrls).toContain("/auth/logout");
       expect(checks.map(c=>c.details).join(" ")).not.toContain("mock-token");
       expect(records.size).toBe(0);
