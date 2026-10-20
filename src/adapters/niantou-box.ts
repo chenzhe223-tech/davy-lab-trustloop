@@ -312,9 +312,13 @@ export async function runNianBoxStagingChecks(config: NianBoxAdapterConfig): Pro
     if (tokenB) {
       try { await requestJson(config, "/auth/logout", tokenB, "POST"); } catch { /* best-effort cleanup only; never record token */ }
     }
+    if (tokenOther) {
+      try { await requestJson(config, "/auth/logout", tokenOther, "POST"); } catch { /* best-effort cleanup only; never record token */ }
+    }
   }
 
   checkUpdate(checks, "sync.cross-device-integrity", syncStatus, syncDetails);
   checkUpdate(checks, "auth.logout-revocation", logoutStatus, logoutDetails);
+  checkUpdate(checks, "security.account-isolation", isolationStatus, isolationDetails);
   return checks;
 }
