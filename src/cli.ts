@@ -8,6 +8,10 @@ import { loadNianBoxAdapterConfig, pendingNianBoxChecks, runNianBoxStagingChecks
 import { compareReports, renderComparisonMarkdown } from "./compare.js";
 function parseArgs(a:string[]){const o:Record<string,string>={};for(let i=0;i<a.length;i++)if(a[i]?.startsWith("--")){const k=a[i]!.slice(2);o[k]=a[i+1]&&!a[i+1]!.startsWith("--")?a[++i]!:"true";}return o;}
 const args=parseArgs(process.argv.slice(2));
+function setExitCodeAtLeast(next: number): void {
+  const current = typeof process.exitCode === "number" ? process.exitCode : Number(process.exitCode ?? 0);
+  process.exitCode = Math.max(Number.isFinite(current) ? current : 0, next);
+}
 const target=args.url||process.env.TARGET_URL||"";
 const out=args.out||process.env.TRUSTLOOP_OUT||"reports/latest";
 const allow=(process.env.TRUSTLOOP_ALLOWED_HOSTS||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
@@ -70,12 +74,12 @@ if (args.compare) {
     const baseline = JSON.parse(await fs.readFile(args.compare, "utf8"));
     if (baseline?.schemaVersion !== "1.0.0" || !Array.isArray(baseline?.checks) || typeof baseline?.runId !== "string") throw new Error("Baseline is not a TrustLoop report schema 1.0.0.");
     const comparison = compareReports(report, baseline);
-    if (!comparison.targetMatches) { console.error("Comparison warning: target URL differs from baseline; this is not an apples-to-apples comparison."); process.exitCode = Math.max(process.exitCode || 0, 2); }
-    if (comparison.summary.regressed > 0 || comparison.summary.removed > 0) process.exitCode = Math.max(process.exitCode || 0, 1);
+    if (!comparison.targetMatches) { console.error("Comparison warning: target URL differs from baseline; this is not an apples-to-apples comparison."); setExitCodeAtLeast(2); }
+    if (comparison.summary.regressed > 0 || comparison.summary.removed > 0) setExitCodeAtLeast(1);
     await fs.writeFile(path.join(out, "comparison.json"), JSON.stringify(comparison, null, 2) + "\n");
     await fs.writeFile(path.join(out, "comparison.md"), renderComparisonMarkdown(comparison));
     console.log("Comparison: improved=" + comparison.summary.improved + ", regressed=" + comparison.summary.regressed + ", targetMatches=" + comparison.targetMatches);
   } catch (e) { console.error("Comparison failed: " + redactDiagnostic((e as Error).message)); process.exitCode = Math.max(process.exitCode || 0, 2); }
 }
 console.log(`TrustLoop: ${report.status}\nReports: ${path.resolve(out)}`);
-if(report.status==="BLOCKED")process.exitCode = Math.max(process.exitCode || 0, 3); else if(report.status==="FAIL")process.exitCode = Math.max(process.exitCode || 0, 1);
+if(report.status==="BLOCKED") setExitCodeAtLeast(3); else if(report.status==="FAIL") setExitCodeAtLeast(1);
