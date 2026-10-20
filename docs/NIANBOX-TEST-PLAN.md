@@ -22,11 +22,13 @@
 
 ## Execution sequence
 1. Create a dedicated test/staging deployment and disposable account. The account label is metadata only, never a credential.
-2. Configure Actions variables: `TRUSTLOOP_ENVIRONMENT=staging`, `TRUSTLOOP_TARGET_URL` to the test URL, and `TRUSTLOOP_ALLOWED_HOSTS` to the exact host.
-3. Start with read-only discovery and UI smoke tests; confirm off-host requests are blocked.
-4. Implement stateful checks as separate opt-in scenarios with synthetic fixtures and cleanup verification. Never run them against production.
-5. Capture only redacted evidence: outcome, fixture hash, environment, method, and known limitations. Do not retain raw credentials or real user content.
-6. Re-test after fixes and compare reports using stable check IDs.
+2. Configure GitHub Actions variables: `TRUSTLOOP_ENVIRONMENT=staging`, `TRUSTLOOP_TARGET_URL` for the app URL, `TRUSTLOOP_ALLOWED_HOSTS` containing both exact app and Worker hostnames, `TRUSTLOOP_ADAPTER=niantou-box`, and `TRUSTLOOP_TEST_ACCOUNT_LABEL=trustloop-disposable-user-a`.
+3. Keep `TRUSTLOOP_NIANBOX_STATEFUL_TESTS` unset or false by default. For a manual `workflow_dispatch` run only, set this repository variable to `true` after confirming the separate staging database and test account are disposable.
+4. Configure Actions secrets `TRUSTLOOP_NIANBOX_STAGING_CONFIRMATION=I_CONFIRM_STAGING_ONLY`, `TRUSTLOOP_NIANBOX_TEST_EMAIL`, and `TRUSTLOOP_NIANBOX_TEST_PASSWORD`. Configure `TRUSTLOOP_NIANBOX_CLOUD_URL` as a variable pointing to the isolated Worker origin.
+5. The opt-in integration test logs in twice using the disposable account, creates one uniquely-named synthetic idea, reads and updates it via the second session, confirms the update from the first session, then attempts a purge and tests whether the first session token is rejected after logout. Raw tokens, response bodies, and user content are not written to reports.
+6. Both app and Worker hosts must be explicitly allowlisted and clearly marked staging/test/preview (unless loopback local testing). The code rejects production environment labels and non-staging-looking hostnames before the write test. These naming checks supplement, but do not replace, operator confirmation that the target and database are actually isolated.
+7. Re-test after fixes and compare reports using stable check IDs. If cleanup cannot be confirmed, the report fails and instructs an operator to inspect staging and remove only the TrustLoop-generated fixture.
+8. E2EE, encryption-key recovery, per-device revocation, session expiry, server-side plaintext inspection, and offline local persistence remain BLOCKED until their separate evidence collectors are implemented.
 
 ## Code-review leads (not a complete audit)
 Prior source inspection found that the Worker appears to serialize document objects into a D1 `doc` field as JSON and parse them back on reads. This is a lead to verify potential plaintext storage, not proof of every deployed behavior. Password reset does not establish encryption-key recovery. A device/session list and current-session logout do not establish per-device revocation.
