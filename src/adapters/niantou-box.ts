@@ -170,12 +170,13 @@ export async function runNianBoxStagingChecks(config: NianBoxAdapterConfig): Pro
       email: config.testEmail, password: config.testPassword, deviceLabel: config.testAccountLabel + "-b"
     });
     const loginBodyB = loginB.body;
+    const cursorB = numeric(loginBodyB?.cursor);
     if (typeof loginBodyB?.token === "string") tokenB = loginBodyB.token;
-    if (loginB.status !== 200 || typeof tokenB !== "string" || numeric(loginBodyB?.cursor) === null) {
+    if (loginB.status !== 200 || typeof tokenB !== "string" || cursorB === null) {
       syncDetails = "BLOCKED: second disposable test session could not be established (HTTP " + loginB.status + "); response body withheld.";
       logoutDetails = "BLOCKED: session revocation test requires a valid disposable test session.";
     } else {
-      baselineB = numeric(loginBodyB.cursor);
+      baselineB = cursorB;
       let contentUpdated = false;
       try {
         const createdAt = Date.now();
