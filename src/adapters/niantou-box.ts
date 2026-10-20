@@ -4,7 +4,7 @@ import { validateTarget, validateSafeEnvironment } from "../policy.js";
 
 export type NianBoxCheckId =
   | "auth.session-expiry" | "auth.logout-revocation" | "crypto.client-side-encryption"
-  | "crypto.key-recovery" | "security.device-revocation" | "privacy.cloud-plaintext"
+  | "crypto.key-recovery" | "security.device-revocation" | "security.account-isolation" | "privacy.cloud-plaintext"
   | "sync.cross-device-integrity" | "storage.local-persistence";
 export interface NianBoxCheckSpec {
   id: NianBoxCheckId; title: string; category: Category; severity: "high" | "critical"; critical: boolean;
@@ -16,6 +16,7 @@ export const NIANBOX_CHECKS: readonly NianBoxCheckSpec[] = [
   {id:"crypto.client-side-encryption",title:"Client-side encryption before cloud persistence",category:"privacy",severity:"critical",critical:true,objective:"Determine whether sensitive content is encrypted client-side before cloud persistence and whether the server can decrypt it.",evidenceRequired:["synthetic plaintext marker","browser-side write payload capture","isolated stored representation","key custody analysis"],safeMethod:"Use a unique synthetic marker in an isolated test environment; never use real user notes."},
   {id:"crypto.key-recovery",title:"Encryption key recovery is distinct from password reset",category:"security",severity:"critical",critical:true,objective:"Verify account password recovery does not imply recovery of an encryption key the service does not possess.",evidenceRequired:["test account key fingerprint before recovery","documented recovery flow result","decryption result for synthetic fixture"],safeMethod:"Use disposable test data and documented recovery semantics in an isolated environment."},
   {id:"security.device-revocation",title:"Per-device session revocation",category:"security",severity:"critical",critical:true,objective:"Verify revoking one device blocks its future access without unintentionally revoking or preserving another session.",evidenceRequired:["two session fingerprints","revocation action/result","revoked session rejected","other session behavior documented"],safeMethod:"Use two disposable browser contexts; never invalidate real user sessions."},
+  {id:"security.account-isolation",title:"Cross-account data isolation",category:"security",severity:"critical",critical:true,objective:"Verify a separate test account cannot read another account's synthetic records.",evidenceRequired:["two disposable account labels","synthetic record identifier","second account pull result"],safeMethod:"Use two separately created staging-only test accounts and synthetic content; never use real user notes."},
   {id:"privacy.cloud-plaintext",title:"Cloud storage does not expose sensitive plaintext",category:"privacy",severity:"critical",critical:true,objective:"Inspect isolated test storage for a synthetic marker and establish whether document content is readable server-side.",evidenceRequired:["synthetic marker hash","isolated storage record","marker search result","conclusion and limitations"],safeMethod:"Read only an isolated test database or fixture; never query production data."},
   {id:"sync.cross-device-integrity",title:"Cross-device sync integrity and conflict handling",category:"functional",severity:"high",critical:false,objective:"Verify a synthetic record appears intact on a second test device and conflict handling is deterministic.",evidenceRequired:["source record hash","destination record hash","sync timestamps","conflict scenario result"],safeMethod:"Use synthetic records, two browser contexts, and test-only accounts."},
   {id:"storage.local-persistence",title:"Local persistence and offline recovery",category:"functional",severity:"high",critical:false,objective:"Verify an unsynced synthetic record survives reload/offline transitions with a clear recovery outcome.",evidenceRequired:["record hash before reload","offline/reload sequence","record hash after recovery"],safeMethod:"Use a clean browser profile and synthetic records; do not clear a user's real storage."}
@@ -31,6 +32,8 @@ export interface NianBoxAdapterConfig {
   cloudUrl?: string;
   testEmail?: string;
   testPassword?: string;
+  testEmailB?: string;
+  testPasswordB?: string;
 }
 const STAGING_CONFIRMATION = "I_CONFIRM_STAGING_ONLY";
 const STAGING_HOST_PATTERN = /(^|[.-])(staging|stage|stg|test|testing|qa|preview)([.-]|$)/i;
