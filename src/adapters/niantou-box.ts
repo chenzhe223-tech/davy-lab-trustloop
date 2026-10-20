@@ -196,7 +196,7 @@ export async function runNianBoxStagingChecks(config: NianBoxAdapterConfig): Pro
           const readOnB = await requestJson(config, "/sync/pull?since=" + encodeURIComponent(String(baselineB)), tokenB);
           const ideasB = Array.isArray(readOnB.body?.ideas) ? readOnB.body.ideas.map(asObject) : [];
           const foundB = ideasB.find(item => item?.id === recordId);
-          if (readOnB.status !== 200 || foundB?.content !== plainMarker) {
+          if (readOnB.status !== 200 || foundB == null || foundB.content !== plainMarker) {
             syncStatus = "FAIL";
             syncDetails = "The second session did not read back the exact synthetic record written by the first session (HTTP " + readOnB.status + ").";
           } else {
