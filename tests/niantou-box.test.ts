@@ -59,7 +59,7 @@ describe("NianBox adapter guardrails",()=>{
     const config=loadNianBoxAdapterConfig(statefulEnv);
     expect(config.statefulTestsEnabled).toBe(true);
     expect(config.cloudUrl).toBe("https://niantou-cloud-staging.example.test");
-        expect(config.testEmail).toBe("trustloop-test@example.test");
+    expect(config.testEmail).toBe("trustloop-test@example.test");
     expect(config.testEmailB).toBe("trustloop-test-b@example.test");
     expect(()=>loadNianBoxAdapterConfig({...statefulEnv,TRUSTLOOP_ALLOWED_HOSTS:"niantou-staging.example.test"}))
       .toThrow(/allowlisted/i);
@@ -67,6 +67,8 @@ describe("NianBox adapter guardrails",()=>{
       .toThrow(/allowlisted/i);
     expect(()=>loadNianBoxAdapterConfig({...statefulEnv,TRUSTLOOP_NIANBOX_TEST_PASSWORD:"short"}))
       .toThrow(/8–200 characters/i);
+    expect(()=>loadNianBoxAdapterConfig({...statefulEnv,TRUSTLOOP_NIANBOX_TEST_EMAIL_B:"trustloop-test@example.test"}))
+      .toThrow(/two different test account emails/i);
   });
   it("rejects a non-staging app or cloud host before any integration request",()=>{
     expect(()=>loadNianBoxAdapterConfig({...statefulEnv,TARGET_URL:"https://app.example.com",TRUSTLOOP_ALLOWED_HOSTS:"app.example.com,niantou-cloud-staging.example.test"}))
