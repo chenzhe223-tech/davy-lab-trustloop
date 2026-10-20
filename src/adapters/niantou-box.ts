@@ -156,24 +156,24 @@ export async function runNianBoxStagingChecks(config: NianBoxAdapterConfig): Pro
       email: config.testEmail, password: config.testPassword, deviceLabel: config.testAccountLabel + "-a"
     });
     const loginBodyA = loginA.body;
-    if (loginA.status !== 200 || typeof loginBodyA?.token !== "string" || numeric(loginBodyA.cursor) === null) {
+    if (typeof loginBodyA?.token === "string") tokenA = loginBodyA.token;
+    if (loginA.status !== 200 || typeof tokenA !== "string" || numeric(loginBodyA?.cursor) === null) {
       syncDetails = "BLOCKED: first disposable test session could not be established (HTTP " + loginA.status + "); response body withheld.";
       logoutDetails = "BLOCKED: session revocation test requires a valid disposable test session.";
       return checks.map(c => c.id === "nianbox.sync.cross-device-integrity" ? {...c,status:"BLOCKED",details:syncDetails}
         : c.id === "nianbox.auth.logout-revocation" ? {...c,status:"BLOCKED",details:logoutDetails} : c);
     }
-    tokenA = loginBodyA.token;
     baselineA = numeric(loginBodyA.cursor);
 
     const loginB = await requestJson(config, "/auth/login", undefined, "POST", {
       email: config.testEmail, password: config.testPassword, deviceLabel: config.testAccountLabel + "-b"
     });
     const loginBodyB = loginB.body;
-    if (loginB.status !== 200 || typeof loginBodyB?.token !== "string" || numeric(loginBodyB.cursor) === null) {
+    if (typeof loginBodyB?.token === "string") tokenB = loginBodyB.token;
+    if (loginB.status !== 200 || typeof tokenB !== "string" || numeric(loginBodyB?.cursor) === null) {
       syncDetails = "BLOCKED: second disposable test session could not be established (HTTP " + loginB.status + "); response body withheld.";
       logoutDetails = "BLOCKED: session revocation test requires a valid disposable test session.";
     } else {
-      tokenB = loginBodyB.token;
       baselineB = numeric(loginBodyB.cursor);
       let contentUpdated = false;
       try {
